@@ -60,3 +60,16 @@ class MonthlyStatFilter(BaseFilter):
         stat_df = stat_df.crossJoin(df.agg(F.countDistinct('repository_id').alias('d_repo_count')))
 
         return stat_df
+    
+class PytorchTopIssuerFilter(BaseFilter):
+    def filter(self, df):
+        # Filter : repo_name = pytorch
+        base_df = df.filter(F.col('userid_and_repo_name') == 'pytorch/pytorch')
+
+        # groupby : 
+        result_df = base_df.groupBy('user_name').pivot('type').count()
+        result_df = result_df.cache()
+        result_df.where((~F.col('user_name').contains('[bot]'))) \
+                    .orderBy(F.desc('IssuesEvent')) \
+                    .limit(10)
+        return result_df

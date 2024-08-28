@@ -52,9 +52,14 @@ def init_df(df):
     df = df.withColumn('created_at', F.trim(F.regexp_replace(df.created_at, "[TZ]", " ")))
     df = df.withColumn('created_at', F.to_timestamp(df.created_at, 'yyyy-MM-dd HH:mm:ss'))
 
+    # For pytorch filter
+    ## pytorch/pytorch(아이디/레포이름)으로 필터를 걸 예정
+    df = df.withColumn('userid_and_repo_name', 'repo_name')
+
     udf_check_repo_name = F.udf(lambda name: name.split("/")[-1], StringType())
     df = df.withColumn('repo_name', udf_check_repo_name(F.col('name')))
     df = df.drop('name')
+
     return df
 
 def df_with_meta(df, datetime):
