@@ -3,6 +3,7 @@ import json
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
 import pyspark.sql.functions as F
+import os
 
 ### 시작시간 기록
 start_time = time.time()
@@ -20,13 +21,24 @@ spark = (
 sc = spark.sparkContext
 
 #json파일로 저장해 둔 스키마 불러오기
-input_file_path = '../jobs/github_schema.json'
+if os.getcwd() == '/home/jovyan/work': # if jupyter
+    input_file_path = '../jobs/github_schema.json'
+else: # else (docker)
+    input_file_path = './jobs/github_schema.json'
+
 with open(input_file_path, 'r') as json_file:
     github_schema = json.load(json_file)
 
+
 # 저장한 스키마로 파일 읽기 (1달치)
+if os.getcwd() == '/home/jovyan/work': # if jupyter
+    input_file_path = "../data/gh_archive/2024-08-01-*.json.gz"
+else: # else (docker)
+    input_file_path = "./data/gh_archive/2024-08-01-*.json.gz"
+
 schema_to_read = StructType.fromJson(github_schema)
-df = spark.read.schema(schema_to_read).json("../data/gh_archive/*.json.gz")
+df = spark.read.schema(schema_to_read).json("./data/gh_archive/2024-08-01-*.json.gz")
+
 
 # 데이터 확인 (actor.login컬럼의 전체데이터 distinct)
 columns = ['actor.login']
