@@ -54,7 +54,7 @@ def init_df(df):
 
     # For pytorch filter
     ## pytorch/pytorch(아이디/레포이름)으로 필터를 걸 예정
-    df = df.withColumn('userid_and_repo_name', 'repo_name')
+    df = df.withColumn('userid_and_repo_name', F.col('name'))
 
     udf_check_repo_name = F.udf(lambda name: name.split("/")[-1], StringType())
     df = df.withColumn('repo_name', udf_check_repo_name(F.col('name')))
