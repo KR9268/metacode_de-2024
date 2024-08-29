@@ -16,13 +16,24 @@ if __name__ == "__main__":
         .builder
         .master("local")
         .appName("spark-sql")
-        .config("spark.driver.extraClassPath", "/opt/bitnami/spark/resources/elasticsearch-spark-30_2.12-8.4.3.jar")
-        .config("spark.jars", "opt/bitnami/spark/resources/elasticsearch-spark-30_2.12-8.4.3.jar")
+        #.config("spark.driver.extraClassPath", "/opt/bitnami/spark/resources/elasticsearch-spark-30_2.12-8.4.3.jar") # 원본
+        .config("spark.driver.extraClassPath", "resources/elasticsearch-spark-30_2.12-8.4.3.jar")
+        #.config("spark.jars", "opt/bitnami/spark/resources/elasticsearch-spark-30_2.12-8.4.3.jar") # 원본
+        .config("spark.jars", "resources/elasticsearch-spark-30_2.12-8.4.3.jar")
+        # 옵션추가 시작
+        .config("spark.executor.memory","3G")
+        .config("spark.driver.memory","3G")
+        .config("num-executor",2)
+        .config("executor-cores",2)
+        # 옵션추가 끝
         .getOrCreate())
     args.spark = spark
     if args.target_date is None: 
         args.target_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
-    args.input_path = f"/opt/bitnami/spark/data/{args.target_date}-*.json"
+    args.input_path = f"/opt/bitnami/spark/data/{args.target_date}-*.json.gz"
+    args.input_path = f"/opt/bitnami/spark/data/gh_archive/2024-08-03-23.json.gz" # for test
+    # args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json.gz"
+    print(args.input_path)
 
     df = read_input(args.spark, args.input_path)
     df = init_df(df)
