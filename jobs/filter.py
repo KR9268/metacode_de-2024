@@ -66,6 +66,12 @@ class PytorchTopIssuerFilter(BaseFilter):
         # Filter : repo_name = pytorch
         base_df = df.filter(F.col('userid_and_repo_name') == 'pytorch/pytorch')
 
+        issues_event_exists = base_df.filter(base_df["type"] == "IssuesEvent").count() > 0
+        if issues_event_exists:
+            result_df = base_df.filter(F.col('type') == 'IssuesEvent')
+        else:
+            return None
+
         # groupby : 
         result_df = base_df.groupBy('user_name').pivot('type').count()
         result_df = result_df.cache()
