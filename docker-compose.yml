@@ -90,7 +90,8 @@ services:
       - node.name=es
       - discovery.type=single-node
       - discovery.seed_hosts=es
-      - xpack.security.enabled=false
+      - xpack.security.enabled=false # false였지만 es접속사이트 가이드에 맞춰 변경
+      #- xpack.security.authc.api_key.enabled=true #es접속사이트 가이드에 맞춰 추가
       - xpack.security.enrollment.enabled=false
       - xpack.security.http.ssl.enabled=false
       - xpack.security.transport.ssl.enabled=false
@@ -132,14 +133,20 @@ services:
   webserver:
     <<: *airflow-common
     command: webserver
+    restart: always
+    user: "0:0"
     ports:
-      - "8081:8080"
+      - "8080:8081"
     depends_on:
       - scheduler
 
   scheduler:
     <<: *airflow-common
-    command: bash -c "airflow db init && airflow db migrate && airflow users create --username airflow --firstname airflow --lastname airflow --role Admin --email airflow@gmail.com --password airflow && airflow scheduler"
+    # 컨테이너 에러메시지에 따라 삭제(airflow db init &&) :  DeprecationWarning: `db init` is deprecated.  Use `db migrate`
+    command: bash -c "airflow db migrate && airflow users create --username airflow --firstname airflow --lastname airflow --role Admin --email airflow@gmail.com --password airflow && airflow scheduler"
+    restart: always
+    user: "0:0"
 
 networks:
   default-network:
+    
