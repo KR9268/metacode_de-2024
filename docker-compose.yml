@@ -136,14 +136,14 @@ services:
     restart: always
     user: "0:0"
     ports:
-      - "8080:8081"
+      - "8082:8080"
     depends_on:
       - scheduler
 
   scheduler:
     <<: *airflow-common
     # 컨테이너 에러메시지에 따라 삭제(airflow db init &&) :  DeprecationWarning: `db init` is deprecated.  Use `db migrate`
-    command: bash -c "airflow db migrate && airflow users create --username airflow --firstname airflow --lastname airflow --role Admin --email airflow@gmail.com --password airflow && airflow scheduler"
+    command: bash -c "airflow db init && airflow db migrate && airflow users create --username airflow --firstname airflow --lastname airflow --role Admin --email airflow@gmail.com --password airflow && airflow scheduler"
     restart: always
     user: "0:0"
 
