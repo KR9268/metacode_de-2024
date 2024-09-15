@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser.add_argument("--target_date", default=None, help="optional:target date(yyyy-mm-dd)")
     args = parser.parse_args()
 
-    es = Es("http://es:9200")
+    
 
     spark = (SparkSession
         .builder
@@ -35,12 +35,9 @@ if __name__ == "__main__":
     args.spark = spark
     if args.target_date is None: 
         args.target_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
-    args.input_path = f"/opt/bitnami/spark/data/{args.target_date}-*.json.gz"
-    args.input_path = f"/opt/bitnami/spark/data/gh_archive/2024-08-24-10.json.gz" # for test
-    # args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json.gz"
+    args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json.gz"
+    #args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-10.json.gz" # for test
     print(args)
-    
-
     
     df = read_input(args.spark, args.input_path)
     df = init_df(df)
@@ -48,7 +45,6 @@ if __name__ == "__main__":
     # daily stat filter
     stat_filter = DailyStatFilter(args)
     stat_df = stat_filter.filter(df)
-    stat_df.show()
     stat_df = df_with_meta(stat_df, args.target_date)
     stat_df.show()
 
@@ -62,20 +58,24 @@ if __name__ == "__main__":
     # user_df = user_filter.filter(df)
     # user_df = df_with_meta(user_df, args.target_date)
 
-    stat_df.show()
-    # repo_df.show()
-    # user_df.show()
+    # stat_df.show()
+    # # repo_df.show()
+    # # user_df.show()
 
-    pytorch_filter = PytorchTopIssuerFilter(args)
-    pytorch_df = pytorch_filter.filter(df)
-    if pytorch_df is not None:
-        pytorch_df = df_with_meta(pytorch_df, args.target_date)
-        pytorch_df.show()
-        es.write_df(pytorch_df, "pytorch-top-issuer")
+    # pytorch_filter = PytorchTopIssuerFilter(args)
+    # pytorch_df = pytorch_filter.filter(df)
+    # if pytorch_df is not None:
+    #     pytorch_df = df_with_meta(pytorch_df, args.target_date)
+    #     pytorch_df.show()
+    #     es.write_df(pytorch_df, "pytorch-top-issuer")
 
     # store data to ES
-
-    # es.write_df(stat_df, "daily-stats-2024")
+    es = Es("http://es:9200")
+    es.write_df(stat_df, "daily-stats-2024")
     # es.write_df(repo_df, "top-repo-2024")
     # es.write_df(user_df, "top-user-2024")
+
+    with open("jobs/output.txt", "w") as f:  # Save the result to a file
+        f.write(stat_df._jdf.showString(20, 20, False))
+
 
