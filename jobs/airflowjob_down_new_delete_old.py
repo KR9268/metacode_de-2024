@@ -7,6 +7,7 @@ def format_dict(dictionary):
     return formatted_str
 
 def down_from_gharchive(target_date_down, target_path):
+    print(f'Recevied target_date_down : {target_date_down}')
     list_path_download = {'Already_exist':[],'Downloaded':[]}
     for each_time in range(0,24):
         file_name = f'{datetime.strptime(target_date_down, "%Y-%m-%d").strftime("%Y-%m-%d")}-{each_time:2d}.json.gz'
@@ -23,6 +24,7 @@ def down_from_gharchive(target_date_down, target_path):
     return format_dict(list_path_download)
 
 def del_old_file_gharchive(target_date_delete, target_path):
+    print(f'Recevied target_date_delete : {target_date_delete}')
     list_deleted = {'Deleted':[]}
     for each_time in range(0,24):
         file_path = f"{target_path}{datetime.strptime(target_date_delete, '%Y-%m-%d').strftime('%Y-%m-%d')}-{each_time}.json.gz"
