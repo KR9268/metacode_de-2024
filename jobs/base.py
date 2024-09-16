@@ -1,9 +1,9 @@
 import glob
-
 from abc import ABC, abstractmethod
 from pyspark.sql.types import StructType, StructField, StringType, LongType
-
+from pyspark.sql.functions import concat_ws, lit
 import pyspark.sql.functions as F
+
 
 actor_schema = StructType([
     StructField('login', StringType(), True),
@@ -64,6 +64,10 @@ def init_df(df):
 
 def df_with_meta(df, datetime):
     df = df.withColumn("@timestamp", F.lit(datetime)) 
+    return df
+
+def df_custom_id_for_es(df, df_index, base_column_name):
+    df = df.withColumn("custom_id", concat_ws("_", lit(df_index), df[base_column_name]))
     return df
 
 
