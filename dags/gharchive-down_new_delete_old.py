@@ -55,8 +55,8 @@ dag = DAG("gharchive-down_new_delete_old",
 
 # Task0 : target_date 설정 (catchup 등으로 실행하는 부분 고려)
 def set_down_date(**kwargs):
-    print(f"Logical_date : {kwargs['logical_date']}")
-    target_date_down = (kwargs['logical_date']- timedelta(days=1)).strftime('%Y-%m-%d')
+    print(f"Logical_date : {kwargs['logical_date']}") # logical_date : 전일 0시 ~ 금일 0시
+    target_date_down = (kwargs['logical_date']- timedelta(days=0)).strftime('%Y-%m-%d')
     print(f'Calculated target_date_down : {target_date_down}')
     return target_date_down
 
@@ -70,8 +70,8 @@ down_date_calculate = PythonOperator(
 # target_date_down = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 def set_delete_date(**kwargs):
-    print(f"Logical_date : {kwargs['logical_date']}")
-    target_date_delete = (kwargs['logical_date']- timedelta(days=30)).strftime('%Y-%m-%d')
+    print(f"Logical_date : {kwargs['logical_date']}") # logical_date : 전일 0시 ~ 금일 0시
+    target_date_delete = (kwargs['logical_date']- timedelta(days=29)).strftime('%Y-%m-%d')
     print(f'Calculated target_date_delete : {target_date_delete}')
     return target_date_delete
 
