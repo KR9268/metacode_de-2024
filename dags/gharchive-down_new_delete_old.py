@@ -5,7 +5,7 @@ from airflow.providers.slack.operators.slack import SlackAPIPostOperator
 from airflow.models.baseoperator import chain
 from airflow.models import Variable
 from datetime import datetime, timedelta
-
+import ast
 import sys
 sys.path.append('/opt/airflow/jobs')
 from airflowjob_down_new_delete_old import down_from_gharchive, del_old_file_gharchive
@@ -56,7 +56,7 @@ dag = DAG("gharchive-down_new_delete_old",
 # Task0 : target_date 설정 (catchup 등으로 실행하는 부분 고려)
 def set_down_date(**kwargs):
     print(f"Logical_date : {kwargs['logical_date']}") # logical_date : 전일 0시 ~ 금일 0시
-    target_date_down = (kwargs['logical_date']- timedelta(days=0)).strftime('%Y-%m-%d')
+    target_date_down = (kwargs['logical_date']- timedelta(days=1)).strftime('%Y-%m-%d')
     print(f'Calculated target_date_down : {target_date_down}')
     return target_date_down
 
@@ -87,14 +87,44 @@ delete_date_calculate = PythonOperator(
 
 # Task1 : 다운로드
 target_path = '/opt/bitnami/spark/data/gh_archive/'
+delay_seconds = 1  # 다운로드 작업 사이에 지연 추가(초)
 
-download_from_gharchive = PythonOperator(
-    task_id="file_down_gharchive",
-    op_kwargs={"target_date_down": "{{task_instance.xcom_pull(task_ids='calculate_down_date')}}","target_path":target_path},
-    python_callable = down_from_gharchive,
-    dag=dag
-)
+    # # 기존 Python Downloader. 아래의 Spark Downloader문제시 사용
+    # download_from_gharchive = PythonOperator(
+    #     task_id="file_down_gharchive",
+    #     op_kwargs={"target_date_down": "{{task_instance.xcom_pull(task_ids='calculate_down_date')}}","target_path":target_path},
+    #     python_callable = down_from_gharchive,
+    #     dag=dag
+    # )
 
+download_from_gharchive = SparkSubmitOperator(
+        task_id='gharchive_down_spark',
+        application="jobs/gharchive-down_with_spark.py", # 절대경로라면 /opt/airflow/jobs/
+        application_args=["--target_date", "{{ task_instance.xcom_pull(task_ids='calculate_down_date') }}",
+                          "--target_path", target_path,
+                          "--delay_seconds", str(delay_seconds)],
+        name="down_from_gharchive_spark_with_delay",
+        conf={
+            'spark.master': 'spark://spark-master:7077',  # master 설정
+            'spark.dynamicAllocation.enabled': 'true',
+            'spark.dynamicAllocation.executorIdleTimeout': '2m',
+            'spark.dynamicAllocation.minExecutors': '1',
+            'spark.dynamicAllocation.maxExecutors': '3',
+            'spark.dynamicAllocation.initialExecutors': '1',
+            'spark.memory.offHeap.enabled': 'true',
+            'spark.memory.offHeap.size': '2G',
+            'spark.shuffle.service.enabled': 'true',
+            'spark.executor.memory': '2G',
+            'spark.driver.memory': '2G',
+            'spark.driver.maxResultSize': '0',
+        },
+        conn_id="spark-conn", # 필수값. UI에서 conenctivity 설정해둔 기준
+        jars="/opt/bitnami/spark/resources/elasticsearch-spark-30_2.12-8.4.3.jar",
+        executor_cores=1,
+        num_executors=2,
+        verbose=1,
+        dag=dag
+    )
 
 # Task2 : 1달지난 파일 삭제
 
@@ -106,6 +136,8 @@ delete_old_of_filepath = PythonOperator(
 )
 
 # Task3 : 결과 전송 with Slack (위 Task에서 리턴받은 결과를 출력)
+result_dict = ast.literal_eval(Variable.get("gharchive_downlist"))
+
 send_result_with_slack__file = SlackAPIPostOperator(
     slack_conn_id="slack_pkb",
     task_id='slack_file_down_delete',
@@ -117,8 +149,11 @@ send_result_with_slack__file = SlackAPIPostOperator(
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    "*[gharchive다운로드]*\n{{ task_instance.xcom_pull(task_ids='file_down_gharchive') }}\n\n"
-                    "*[gharchive삭제(30일이상)]*\n{{ task_instance.xcom_pull(task_ids='file_delete_old_gharchive') }}"
+                    "*[gharchive다운로드 작업]*\n\n"
+                    f"*Already_exist* \n{chr(10).join([f'• {item}' for item in result_dict['Already_exist']])}\n\n"
+                    f"*Downloaded* \n{chr(10).join([f'• {item}' for item in result_dict['Downloaded']])}\n\n"
+                    f"*Not exist* \n{chr(10).join([f'• {item}' for item in result_dict['Failed']])}\n\n"
+                    "*[gharchive삭제 작업(30일이상)]*\n\n{{ task_instance.xcom_pull(task_ids='file_delete_old_gharchive') }}"
                 ),
             },
         }
@@ -157,27 +192,29 @@ spark_filter_gh = SparkSubmitOperator(
 
 
 # Task5 : 결과 전송 with Slack
-# def read_spark_output(**kwargs):
-#     with open("jobs/output.txt", "r") as f:
-#         output = f.read()
-#     return output  # Store the output in XCom
 
-# send_result_with_slack__spark = SlackAPIPostOperator(
-#     slack_conn_id="slack_pkb",
-#     task_id='slack_spark_filter',
-#     channel='#alarm',  # 전송할 Slack 채널
-#     dag=dag,
-#     blocks=[
-#         {
-#             "type": "section",
-#             "text": {
-#                 "type": "mrkdwn",
-#                 "text": read_spark_output(),
-#             },
-#         }
-#     ],
-#     text="gharchive_spark_result",  # 필수 fallback 메시지
-# )
+    # # txt통한 데이터프레임 String 전달함수. 아래의 airflow Variable 문제시 사용
+    # def read_spark_output(**kwargs):
+    #     with open("jobs/output.txt", "r") as f:
+    #         output = f.read()
+    #     return output  # Store the output in XCom
+
+    # send_result_with_slack__spark = SlackAPIPostOperator(
+    #     slack_conn_id="slack_pkb",
+    #     task_id='slack_spark_filter',
+    #     channel='#alarm',  # 전송할 Slack 채널
+    #     dag=dag,
+    #     blocks=[
+    #         {
+    #             "type": "section",
+    #             "text": {
+    #                 "type": "mrkdwn",
+    #                 "text": read_spark_output(),
+    #             },
+    #         }
+    #     ],
+    #     text="gharchive_spark_result",  # 필수 fallback 메시지
+    # )
 
 send_result_with_slack__spark = SlackAPIPostOperator(
     slack_conn_id="slack_pkb",
@@ -203,5 +240,3 @@ chain([down_date_calculate, delete_date_calculate],
       send_result_with_slack__file,
       spark_filter_gh,
       send_result_with_slack__spark)
-
-#[down_date_calculate, delete_date_calculate] >> [download_from_gharchive, delete_old_of_filepath] >> send_result_with_slack__file >> spark_filter_gh >> send_result_with_slack__spark
