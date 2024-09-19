@@ -50,8 +50,9 @@ dag = DAG("gharchive-down_new_delete_old",
             "retry_delay": timedelta(minutes=3), # retry주기
             'on_failure_callback': slack_failure_callback,
             },
-          catchup=True, 
-          tags=['PKB','gharchive','down&delete'])
+            schedule_interval="0 2,20 * * *",
+            catchup=True, 
+            tags=['PKB','gharchive','down&delete'])
 
 # Task0 : target_date 설정 (catchup 등으로 실행하는 부분 고려)
 def set_down_date(**kwargs):
