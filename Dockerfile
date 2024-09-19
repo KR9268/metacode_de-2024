@@ -11,7 +11,9 @@ ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
 
 USER airflow
 
-RUN pip install apache-airflow==2.7.1 apache-airflow-providers-apache-spark pyspark elasticsearch
+RUN pip install apache-airflow==2.7.1 apache-airflow-providers-apache-spark pyspark elasticsearch 
+# UN Comtrade data처리용
+RUN pip install comtradeapicall pandas urllib3
 # airflow webserver오류로 추가
 RUN pip install --upgrade azure-storage-common
 RUN pip install pyarrow==10.0.1
