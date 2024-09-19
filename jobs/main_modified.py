@@ -30,7 +30,7 @@ def spark_filter_gharchive(target_date):
     args.spark = spark
     print(f"received target date : {target_date}")
     args.target_date = datetime.strptime(target_date, "%Y-%m-%d").strftime('%Y-%m-%d')
-    args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json.gz"
+    args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json"
 
 
     df = read_input(args.spark, args.input_path)
@@ -60,7 +60,7 @@ def spark_filter_gharchive(target_date):
 
     # 신규 ES함수 (중복기입방지를 위한 id조건 추가)
     es =Es_customid("http://es:9200")
-    es.write_df(stat_df, stat_df_index, "custom_id")
+    es.write_df(df=stat_df, es_resource=stat_df_index,  es_write_operation="upsert", custom_id="custom_id")
 
     with open("jobs/output.txt", "w") as f:  # Save the result to a file
         f.write(stat_df._jdf.showString(20, 20, False))
