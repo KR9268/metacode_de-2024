@@ -23,15 +23,16 @@ def download_file_with_delay(target_date_down, each_time, target_path, delay_sec
     temp_result = subprocess.run(['wget', '-P', target_path, url])
     
     if temp_result.returncode == 0:  # 다운로드 성공
+        # 압축해제시 메모리 문제 발생하여 압축상태로 Spark사용
         # 압축풀기
-        gunzip_file = os.path.join(target_path, f"{file_name}")
-        subprocess.run(['gunzip', '-f', gunzip_file])
+        # gunzip_file = os.path.join(target_path, f"{file_name}")
+        # subprocess.run(['gunzip', '-f', gunzip_file])
 
         # json.gz삭제
-        target_file = os.path.join(target_path, f"{file_name}")
-        subprocess.run(['rm', '-f', target_file])
+        # target_file = os.path.join(target_path, f"{file_name}")
+        # subprocess.run(['rm', '-f', target_file])
 
-        return ('Downloaded', file_path.replace('.gz', ''))
+        return ('Downloaded', file_path)#.replace('.gz', ''))
     else:  # 다운로드 실패
         return ('Failed', url)
 

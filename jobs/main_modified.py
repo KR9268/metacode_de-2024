@@ -30,7 +30,7 @@ def spark_filter_gharchive(target_date):
     args.spark = spark
     print(f"received target date : {target_date}")
     args.target_date = datetime.strptime(target_date, "%Y-%m-%d").strftime('%Y-%m-%d')
-    args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json"
+    args.input_path = f"/opt/bitnami/spark/data/gh_archive/{args.target_date}-*.json.gz"
 
 
     df = read_input(args.spark, args.input_path)

@@ -20,14 +20,14 @@ def down_from_gharchive(target_date_down, target_path):
             if temp_result.returncode == 0: # 0 다운성공 / 8 다운실패
                 # list_path_download['Downloaded'](temp_result.args[3]) # url+filename 형태
                 list_path_download['Downloaded'].append(file_path)
-                
-                # 압축풀기
-                gunzip_file = os.path.join(target_path, f"{file_name}")
-                subprocess.run(['gunzip', '-f', gunzip_file])
 
-                # json.gz삭제
-                target_file = os.path.join(target_path, f"{file_name}")
-                subprocess.run(['rm', '-f', target_file])
+                # # 압축풀기
+                # gunzip_file = os.path.join(target_path, f"{file_name}")
+                # subprocess.run(['gunzip', '-f', gunzip_file])
+
+                # # json.gz삭제
+                # target_file = os.path.join(target_path, f"{file_name}")
+                # subprocess.run(['rm', '-f', target_file])
 
     return format_dict(list_path_download)
 
@@ -35,7 +35,7 @@ def del_old_file_gharchive(target_date_delete, target_path):
     print(f'Recevied target_date_delete : {target_date_delete}')
     list_deleted = {'Deleted':[]}
     for each_time in range(0,24):
-        file_path = f"{target_path}{datetime.strptime(target_date_delete, '%Y-%m-%d').strftime('%Y-%m-%d')}-{each_time}.json"
+        file_path = f"{target_path}{datetime.strptime(target_date_delete, '%Y-%m-%d').strftime('%Y-%m-%d')}-{each_time}.json.gz"
         if os.path.isfile(file_path):
             os.remove(file_path)
             list_deleted['Deleted'].append(file_path)
