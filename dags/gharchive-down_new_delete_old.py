@@ -41,16 +41,16 @@ def slack_failure_callback(context):
     return slack_alert.execute(context=context)
 
 # DAG
-dag = DAG("gharchive-down_new_delete_old", 
+dag = DAG("gharchive-down_new_delete_old",
           default_args={
             "owner": "airflow",
             "depends_on_past": False, # 과거 실행에 의존
-            "start_date": datetime(2024, 9, 11),
+            "start_date": datetime(2024, 9, 15),
             "retries": 1,             # retry 횟수
-            "retry_delay": timedelta(minutes=3), # retry주기
+            "retry_delay": timedelta(hours=2), # retry주기
             'on_failure_callback': slack_failure_callback,
             },
-            schedule_interval="0 2,20 * * *",
+            schedule_interval="0 3 * * *",
             catchup=True, 
             tags=['PKB','gharchive','down&delete'])
 
@@ -190,6 +190,7 @@ spark_filter_gh = SparkSubmitOperator(
         verbose=1,
         dag=dag
     )
+
 
 
 # Task5 : 결과 전송 with Slack
