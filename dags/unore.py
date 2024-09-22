@@ -49,8 +49,8 @@ dag = DAG("unore_pipeline",
             "owner": "airflow",
             "depends_on_past": False, # 과거 실행에 의존
             "start_date": datetime(2024, 9, 20),
-            "retries": 2,             # retry 횟수
-            "retry_delay": timedelta(minutes=10), # retry주기
+            "retries": 1,             # retry 횟수
+            "retry_delay": timedelta(days=1), # retry주기
             'on_failure_callback': slack_failure_callback,
             },
             schedule_interval = "0 5 * * *",
