@@ -159,5 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Downloaded json of gh archive
+# Downloaded json of gh archive & unore
 /data/gh_archive/*
+/data/unore/*
